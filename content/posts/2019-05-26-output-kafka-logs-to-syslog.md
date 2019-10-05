@@ -1,7 +1,7 @@
 ---
 title: "Output Kafka Logs to Syslog"
 date: 2019-05-26T23:00:00+02:00
-draft: true
+draft: false
 ---
 
 I have been strugling with Kafka recently, or at least log4j.

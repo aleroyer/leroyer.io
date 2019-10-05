@@ -6,10 +6,19 @@
     <description>Recent content in Posts on leroyer.io</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 23 Dec 2018 19:16:51 +0200</lastBuildDate>
+    <lastBuildDate>Sun, 26 May 2019 23:00:00 +0200</lastBuildDate>
     
 	<atom:link href="https://leroyer.io/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Output Kafka Logs to Syslog</title>
+      <link>https://leroyer.io/posts/2019-05-26-output-kafka-logs-to-syslog/</link>
+      <pubDate>Sun, 26 May 2019 23:00:00 +0200</pubDate>
+      
+      <guid>https://leroyer.io/posts/2019-05-26-output-kafka-logs-to-syslog/</guid>
+      <description>I have been strugling with Kafka recently, or at least log4j. The default configuration output a lot of logs to stdout. In my actual configuration, stdout logs from an application are captured by systemd-journald and then given to rsyslog. This can come handy when the application doesn&amp;rsquo;t know how to log with syslog. However, I had an issue with Kafka and journald where logs were also written to the filesystem until the partition is full.</description>
+    </item>
     
     <item>
       <title>Starting a Blog</title>
