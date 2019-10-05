@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on leroyer.io</title>
+    <link>https://leroyer.io/posts/</link>
+    <description>Recent content in Posts on leroyer.io</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 23 Dec 2018 19:16:51 +0200</lastBuildDate>
+    
+	<atom:link href="https://leroyer.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Starting a Blog</title>
+      <link>https://leroyer.io/posts/2018-12-23-starting-a-blog/</link>
+      <pubDate>Sun, 23 Dec 2018 19:16:51 +0200</pubDate>
+      
+      <guid>https://leroyer.io/posts/2018-12-23-starting-a-blog/</guid>
+      <description>So it begins.
+I&amp;rsquo;m starting a blog and I will try to write some posts related to tech stuff.
+Most of my posts will be about opensource stuff related to infrastructure and linux systems.
+I hope that you will enjoy reading my posts!
+In the mean time you can check links in the sidebar and come back here in a few months :)</description>
+    </item>
+    
+  </channel>
+</rss>
