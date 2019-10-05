@@ -1,6 +1,6 @@
 baseURL = "https://leroyer.io/"
 languageCode = "en-us"
-title = "leroyer.io"
+title = "Leroyer I/O"
 theme = "m10c"
 
 [params]
