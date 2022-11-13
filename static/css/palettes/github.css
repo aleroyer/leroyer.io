@@ -1,0 +1,22 @@
+/* github dark
+ * base16: https://github.com/Defman21/base16-github-scheme
+ */
+
+ :root {
+	--base00: #0d1117;
+	--base01: #161b22;
+	--base02: #37465D;
+	--base03: #8b949e;
+	--base04: #8b949e;
+	--base05: #c9d1d9;
+	--base06: #f0f6fc;
+	--base07: #ffffff;
+	--base08: #7ee787;
+	--base09: #79c0ff;
+	--base0A: #ffa657;
+	--base0B: #a5d6ff;
+	--base0C: #7ee787;
+	--base0D: #d2a8ff;
+	--base0E: #ff7b72;
+	--base0F: #c9d1d9;
+}

@@ -26,19 +26,19 @@ Yes `UDP`. You can't use `TCP`, this feature is only available on log4j2.
 
 So add at least this to your rsyslog configuration to listen on `127.0.0.1:514` with `UDP`.
 
-{{< highlight shell >}}
+{{< highlight shell "style=dracula" >}}
 module(load="imudp")
 input(type="imudp" address="127.0.0.1" port="514")
 {{< /highlight >}}
 
 Restart your rsyslog instance and you should see rsyslog listening on port 514:
-{{< highlight shell >}}
+{{< highlight shell "style=dracula" >}}
 # netstat -nlptu | grep [r]syslog
 udp        0      0 127.0.0.1:514           0.0.0.0:*                           484/rsyslogd
 {{< /highlight >}}
 
 You can also test that rsyslog is working with UDP with `logger`:
-{{< highlight shell >}}
+{{< highlight shell "style=dracula" >}}
 $ logger -d -n 127.0.0.1 -t test "Test logging"
 
 $ tail /var/log/syslog
@@ -54,7 +54,7 @@ Now that rsyslog is listening on an UDP port we can configure Kafka accordingly.
 What we are going to do is adding an appender to Kafka's `log4j.properties`.
 
 So open this file and add this configuration first:
-{{< highlight cfg "linenos=table" >}}
+{{< highlight cfg "style=dracula" >}}
 log4j.appender.syslog=org.apache.log4j.net.SyslogAppender
 log4j.appender.syslog.threshold=INFO
 log4j.appender.syslog.syslogHost=127.0.0.1:514
@@ -76,7 +76,7 @@ What do we have here?
 `header` add syslog header: date and time, hostname, topic but with some mistakes (at least in this version).
 
 **`layout.conversionPattern`** is customisable to your needs but you must to keep this portion at the beginning
-{{< highlight text >}}
+{{< highlight text "style=dracula" >}}
  %d{MMM dd HH:mm:ss} your_hostname kafka:
 {{< /highlight >}}
 and `%n` at the end (to put a new line character).
@@ -90,12 +90,12 @@ I'm also using a json like logging but you can format it the way you want. Optio
 Last bit of configuration is to tell log4j to forward logs to your appender.
 
 You can for example send everything to syslog (no stdout) like this:
-{{< highlight cfg >}}
+{{< highlight cfg "style=dracula" >}}
 log4j.rootLogger=INFO, syslog
 {{< /highlight >}}
 
 Or just add syslog to the current configuration:
-{{< highlight cfg >}}
+{{< highlight cfg "style=dracula" >}}
 log4j.rootLogger=INFO, stdout, syslog
 {{< /highlight >}}
 
@@ -104,7 +104,7 @@ log4j.rootLogger=INFO, stdout, syslog
 Restart kafka to apply your newly log4j configuration!
 
 Here is a log sample with my configuration when arriving on our central rsyslog:
-{{< highlight logs >}}
+{{< highlight logs "style=dracula" >}}
 2019-05-26T22:17:04+00:00 kafka-server kafka.info {"date":"2019-05-26 22:17:04,763","level":"INFO","category":"kafka.coordinator.group.GroupMetadataManager","message":"[GroupMetadataManager brokerId=1]
  Scheduling loading of offsets and group metadata from __consumer_offsets-7"}
 2019-05-26T22:17:04+00:00 kafka-server kafka.info {"date":"2019-05-26 22:17:04,763","level":"INFO","category":"kafka.coordinator.group.GroupMetadataManager","message":"[GroupMetadataManager brokerId=1]
