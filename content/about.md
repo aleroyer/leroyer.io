@@ -17,6 +17,7 @@ After being graduate from CNAM Engineering School, I got my first job as a Syste
 ## Deezer
 
 - Started as a junior System Administrator / Devops, September 2016
-- Change job title in 2018 for SRE Infrastructure and gain intermediate grade (but still do the same job)
+- Changed job title in 2018 for SRE Infrastructure and gain intermediate grade (but still do the same job)
 - Became Team Manager and Tech Lead of Core Infrastructure Team in 2019/2020
+- Step down from management to be Expert Infrastructure Engineer in 2023 in order to focus on tech
 - Still working at Deezer as of today

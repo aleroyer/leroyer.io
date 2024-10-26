@@ -1,37 +1,40 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Leroyer I/O</title>
-    <link>https://leroyer.io/</link>
-    <description>Recent content on Leroyer I/O</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <title>home on leroyer.io</title>
+    <link>http://localhost:1313/</link>
+    <description>Recent content in home on leroyer.io</description>
+    <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 26 May 2019 23:00:00 +0200</lastBuildDate>
-    
-	<atom:link href="https://leroyer.io/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sun, 13 Nov 2022 17:54:00 +0200</lastBuildDate>
+    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Using HAProxy to act as an HTTP server</title>
+      <link>http://localhost:1313/posts/2022-11-13-using-haproxy-as-an-http-server/</link>
+      <pubDate>Sun, 13 Nov 2022 17:54:00 +0200</pubDate>
+      <guid>http://localhost:1313/posts/2022-11-13-using-haproxy-as-an-http-server/</guid>
+      <description>&lt;p&gt;During my work, I stumbled upon some little problems that often require to deploy several component for just a simple task.&lt;/p&gt;&#xA;&lt;p&gt;For example, we had to validate with our CDN that our endpoint was own by us. Fair enough, let&amp;rsquo;s set a TXT record on our DNS servers! Well, it doesn&amp;rsquo;t always work that way. Those providers required an HTTP validation with a specific URL and content.&lt;/p&gt;&#xA;&lt;h1 id=&#34;context&#34;&gt;Context&lt;/h1&gt;&#xA;&lt;p&gt;We have two providers requesting an HTTP endpoint with a specific url/content.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Output Kafka Logs to Syslog</title>
-      <link>https://leroyer.io/posts/2019-05-26-output-kafka-logs-to-syslog/</link>
+      <link>http://localhost:1313/posts/2019-05-26-output-kafka-logs-to-syslog/</link>
       <pubDate>Sun, 26 May 2019 23:00:00 +0200</pubDate>
-      
-      <guid>https://leroyer.io/posts/2019-05-26-output-kafka-logs-to-syslog/</guid>
-      <description>I have been strugling with Kafka recently, or at least log4j. The default configuration output a lot of logs to stdout. In my actual configuration, stdout logs from an application are captured by systemd-journald and then given to rsyslog. This can come handy when the application doesn&amp;rsquo;t know how to log with syslog. However, I had an issue with Kafka and journald where logs were also written to the filesystem until the partition is full.</description>
+      <guid>http://localhost:1313/posts/2019-05-26-output-kafka-logs-to-syslog/</guid>
+      <description>&lt;p&gt;I have been strugling with Kafka recently, or at least log4j.&#xA;The default configuration output a lot of logs to stdout. In my actual configuration, stdout logs from an application are captured by systemd-journald and then given to rsyslog.&#xA;This can come handy when the application doesn&amp;rsquo;t know how to log with syslog.&#xA;However, I had an issue with Kafka and journald where logs were also written to the filesystem until the partition is full.&#xA;So output log directly to rsyslog was necessary.&lt;/p&gt;</description>
     </item>
-    
     <item>
       <title>Starting a Blog</title>
-      <link>https://leroyer.io/posts/2018-12-23-starting-a-blog/</link>
+      <link>http://localhost:1313/posts/2018-12-23-starting-a-blog/</link>
       <pubDate>Sun, 23 Dec 2018 19:16:51 +0200</pubDate>
-      
-      <guid>https://leroyer.io/posts/2018-12-23-starting-a-blog/</guid>
-      <description>So it begins.
-I&amp;rsquo;m starting a blog and I will try to write some posts related to tech stuff.
-Most of my posts will be about opensource stuff related to infrastructure and linux systems.
-I hope that you will enjoy reading my posts!
-In the mean time you can check links in the sidebar and come back here in a few months :)</description>
+      <guid>http://localhost:1313/posts/2018-12-23-starting-a-blog/</guid>
+      <description>&lt;p&gt;So it begins.&lt;/p&gt;&#xA;&lt;p&gt;I&amp;rsquo;m starting a blog and I will try to write some posts related to tech stuff.&lt;/p&gt;&#xA;&lt;p&gt;Most of my posts will be about opensource stuff related to infrastructure and linux systems.&lt;/p&gt;&#xA;&lt;p&gt;I hope that you will enjoy reading my posts!&lt;/p&gt;&#xA;&lt;p&gt;In the mean time you can check links in the sidebar and come back here in a few months :)&lt;/p&gt;</description>
     </item>
-    
+    <item>
+      <title>About</title>
+      <link>http://localhost:1313/about/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/about/</guid>
+      <description>&lt;p&gt;In IT for at least 10 years, I&amp;rsquo;m a passionate engineer that can be quickly interested in anything.&lt;/p&gt;&#xA;&lt;p&gt;Typical geek/nerd: I like IT, video games, music, mangas and animes.&lt;/p&gt;&#xA;&lt;h2 id=&#34;career-summary&#34;&gt;Career summary&lt;/h2&gt;&#xA;&lt;p&gt;I started working as an apprentice at Netvibes in 2013 as a System Administrator. I made a short hop into a big company (EDF) as a Developper from 2013 to 2016, still as an apprentice.&lt;/p&gt;&#xA;&lt;p&gt;After being graduate from CNAM Engineering School, I got my first job as a System Administrator at Deezer in 2016.&lt;/p&gt;</description>
+    </item>
   </channel>
 </rss>

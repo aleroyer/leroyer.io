@@ -1,187 +1,189 @@
-<!doctype html>
-<html lang="en-us">
-  <head>
-    <title>Output Kafka Logs to Syslog // Leroyer I/O</title>
-    <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.58.3" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="author" content="Antoine Leroyer" />
-    <meta name="description" content="" />
-    <link rel="stylesheet" href="https://leroyer.io/css/main.min.894494725fbc73b8d30470f60bb31a1ca6049795368ee640dc52c456930e372a.css" />
+<!DOCTYPE html>
+<html lang="en">
 
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><title>Output Kafka Logs to Syslog &ndash; leroyer.io</title>
+<meta name="description" content="Hi. I&#39;m Antoine, an Infrastructure Engineer and SRE. Currently working at Deezer.">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8"/>
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.9.1/css/academicons.min.css" integrity="sha512-b1ASx0WHgVFL5ZQhTgiPWX+68KjS38Jk87jg7pe+qC7q9YkEtFq0z7xCglv7qGIs/68d3mAp+StfC8WKC5SSAg==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="http://localhost:1313/css/palettes/github.css">
+<link rel="stylesheet" href="http://localhost:1313/css/risotto.css">
+<link rel="stylesheet" href="http://localhost:1313/css/custom.css">
+</head>
+
+    <body>
+        <div class="page">
+
+            <header class="page__header"><h1 class="page__logo"><a href="http://localhost:1313/" class="page__logo-inner">leroyer.io</a></h1>
+<nav class="page__nav main-nav">
+    <ul>
     
-    <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Output Kafka Logs to Syslog"/>
-<meta name="twitter:description" content="I have been strugling with Kafka recently, or at least log4j. The default configuration output a lot of logs to stdout. In my actual configuration, stdout logs from an application are captured by systemd-journald and then given to rsyslog. This can come handy when the application doesn&rsquo;t know how to log with syslog. However, I had an issue with Kafka and journald where logs were also written to the filesystem until the partition is full."/>
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="http://localhost:1313/about/" title="">About</a></li>
+    
+    <li class="main-nav__item"><a class="nav-main-item active" href="http://localhost:1313/posts/" title="Posts">Posts</a></li>
+    
+    </ul>
+</nav>
 
-    <meta property="og:title" content="Output Kafka Logs to Syslog" />
-<meta property="og:description" content="I have been strugling with Kafka recently, or at least log4j. The default configuration output a lot of logs to stdout. In my actual configuration, stdout logs from an application are captured by systemd-journald and then given to rsyslog. This can come handy when the application doesn&rsquo;t know how to log with syslog. However, I had an issue with Kafka and journald where logs were also written to the filesystem until the partition is full." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="https://leroyer.io/posts/2019-05-26-output-kafka-logs-to-syslog/" />
-<meta property="article:published_time" content="2019-05-26T23:00:00+02:00" />
-<meta property="article:modified_time" content="2019-05-26T23:00:00+02:00" />
+</header>
 
-
-  </head>
-  <body>
-    <header class="app-header">
-      <a href="https://leroyer.io/"><img class="app-header-avatar" src="/avatar.png" alt="Antoine Leroyer" /></a>
-      <h1>Leroyer I/O</h1>
-      <p>Hi. I&#39;m Antoine, an Infrastructure Engineer and SRE. Currently working at Deezer.</p>
-      <div class="app-header-social">
-        
-          <a target="_blank" href="https://github.com/aleroyer" rel="noreferrer noopener"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-github">
-  <title>github</title>
-  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-</svg></a>
-        
-      </div>
+            <section class="page__body">
+    <header class="content__header">
+        <h1>Output Kafka Logs to Syslog</h1>
     </header>
-    <main class="app-container">
-      
-  <article class="post">
-    <header class="post-header">
-      <h1 class ="post-title">Output Kafka Logs to Syslog</h1>
-      <div class="post-meta">
-        <div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
-  <title>calendar</title>
-  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-</svg>
-          May 26, 2019
-        </div>
-        <div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
-  <title>clock</title>
-  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-</svg>
-          4 min read
-        </div></div>
-    </header>
-    <div class="post-content">
-      
-
-<p>I have been strugling with Kafka recently, or at least log4j.
+    <div class="content__body">
+        <p>I have been strugling with Kafka recently, or at least log4j.
 The default configuration output a lot of logs to stdout. In my actual configuration, stdout logs from an application are captured by systemd-journald and then given to rsyslog.
 This can come handy when the application doesn&rsquo;t know how to log with syslog.
 However, I had an issue with Kafka and journald where logs were also written to the filesystem until the partition is full.
 So output log directly to rsyslog was necessary.</p>
-
 <h2 id="a-bit-of-history">A bit of history</h2>
-
 <p>I read a lot of posts on stackoverflow about logging with log4j2 and syslog. I also read the doc of log4j about the <code>SyslogAppender</code>. At first it appears to be really simple, however, Kafka doesn&rsquo;t implement log4j2 but log4j <code>1.2.17</code>.</p>
-
 <p>Yes, this version is no more supported <a href="https://logging.apache.org/log4j/1.2/">since 2015</a> but Kafka still use it, even in its <a href="https://github.com/apache/kafka/blob/2.3/gradle/dependencies.gradle#L67">2.3 release</a>.</p>
-
 <p>In this version, the <code>SyslogAppender</code> was not really working for me. Logs are sent to syslog but in a incorrect format. Some of the options you can find on solutions on Internet are also only available on log4j2.</p>
-
 <h2 id="activate-rsyslog-udp-input">Activate rsyslog UDP input</h2>
-
 <p>Because log4j is unable to connect to a <code>UNIX</code> socket (even in log4j2), you will need to activate <code>UDP</code> listening on rsyslog.</p>
-
 <p>Yes <code>UDP</code>. You can&rsquo;t use <code>TCP</code>, this feature is only available on log4j2.</p>
-
 <p>So add at least this to your rsyslog configuration to listen on <code>127.0.0.1:514</code> with <code>UDP</code>.</p>
-
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">module<span style="color:#f92672">(</span>load<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;imudp&#34;</span><span style="color:#f92672">)</span>
-input<span style="color:#f92672">(</span>type<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;imudp&#34;</span> address<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;127.0.0.1&#34;</span> port<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;514&#34;</span><span style="color:#f92672">)</span></code></pre></div>
-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>module<span style="color:#ff79c6">(</span><span style="color:#8be9fd;font-style:italic">load</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;imudp&#34;</span><span style="color:#ff79c6">)</span>
+</span></span><span style="display:flex;"><span>input<span style="color:#ff79c6">(</span><span style="color:#8be9fd;font-style:italic">type</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;imudp&#34;</span> <span style="color:#8be9fd;font-style:italic">address</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;127.0.0.1&#34;</span> <span style="color:#8be9fd;font-style:italic">port</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;514&#34;</span><span style="color:#ff79c6">)</span></span></span></code></pre></div>
 <p>Restart your rsyslog instance and you should see rsyslog listening on port 514:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># netstat -nlptu | grep [r]syslog</span>
-udp        <span style="color:#ae81ff">0</span>      <span style="color:#ae81ff">0</span> <span style="color:#ae81ff">127</span>.0.0.1:514           <span style="color:#ae81ff">0</span>.0.0.0:*                           <span style="color:#ae81ff">484</span>/rsyslogd</code></pre></div></p>
-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#6272a4"># netstat -nlptu | grep [r]syslog</span>
+</span></span><span style="display:flex;"><span>udp        <span style="color:#bd93f9">0</span>      <span style="color:#bd93f9">0</span> 127.0.0.1:514           0.0.0.0:*                           484/rsyslogd</span></span></code></pre></div></p>
 <p>You can also test that rsyslog is working with UDP with <code>logger</code>:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ logger -d -n <span style="color:#ae81ff">127</span>.0.0.1 -t test <span style="color:#e6db74">&#34;Test logging&#34;</span>
-
-$ tail /var/log/syslog
-May <span style="color:#ae81ff">26</span> <span style="color:#ae81ff">10</span>:20:00 kafka-server test Test logging</code></pre></div></p>
-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ logger -d -n 127.0.0.1 -t <span style="color:#8be9fd;font-style:italic">test</span> <span style="color:#f1fa8c">&#34;Test logging&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ tail /var/log/syslog
+</span></span><span style="display:flex;"><span>May <span style="color:#bd93f9">26</span> 10:20:00 kafka-server <span style="color:#8be9fd;font-style:italic">test</span> Test logging</span></span></code></pre></div></p>
 <h2 id="configuring-log4j-on-kafka-to-send-logs-to-rsyslog">Configuring log4j on Kafka to send logs to rsyslog</h2>
-
 <p>Now that rsyslog is listening on an UDP port we can configure Kafka accordingly.</p>
-
 <h3 id="adding-the-syslogappender">Adding the SyslogAppender</h3>
-
 <p>What we are going to do is adding an appender to Kafka&rsquo;s <code>log4j.properties</code>.</p>
-
 <p>So open this file and add this configuration first:
-<div class="highlight"><div style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
-<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cfg" data-lang="cfg"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">7
-</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">8
-</span></code></pre></td>
-<td style="vertical-align:top;padding:0;margin:0;border:0;">
-<pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cfg" data-lang="cfg"><span style="color:#a6e22e">log4j.appender.syslog</span><span style="color:#f92672">=</span><span style="color:#e6db74">org.apache.log4j.net.SyslogAppender</span>
-<span style="color:#a6e22e">log4j.appender.syslog.threshold</span><span style="color:#f92672">=</span><span style="color:#e6db74">INFO</span>
-<span style="color:#a6e22e">log4j.appender.syslog.syslogHost</span><span style="color:#f92672">=</span><span style="color:#e6db74">127.0.0.1:514</span>
-<span style="color:#a6e22e">log4j.appender.syslog.facility</span><span style="color:#f92672">=</span><span style="color:#e6db74">LOCAL6</span>
-<span style="color:#a6e22e">log4j.appender.syslog.facilityPrinting</span><span style="color:#f92672">=</span><span style="color:#e6db74">false</span>
-<span style="color:#a6e22e">log4j.appender.syslog.header</span><span style="color:#f92672">=</span><span style="color:#e6db74">false</span>
-<span style="color:#a6e22e">log4j.appender.syslog.layout</span><span style="color:#f92672">=</span><span style="color:#e6db74">org.apache.log4j.PatternLayout</span>
-<span style="color:#a6e22e">log4j.appender.syslog.layout.conversionPattern</span><span style="color:#f92672">=</span> <span style="color:#e6db74">%d{MMM dd HH:mm:ss} your_hostname kafka:{&#34;date&#34;:&#34;%d&#34;,&#34;level&#34;:&#34;%p&#34;,&#34;category&#34;:&#34;%c&#34;,&#34;message&#34;:&#34;%m&#34;}%n</span></code></pre></td></tr></table>
-</div>
-</div></p>
-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cfg" data-lang="cfg"><span style="display:flex;"><span><span style="color:#50fa7b">log4j.appender.syslog</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">org.apache.log4j.net.SyslogAppender</span>
+</span></span><span style="display:flex;"><span><span style="color:#50fa7b">log4j.appender.syslog.threshold</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">INFO</span>
+</span></span><span style="display:flex;"><span><span style="color:#50fa7b">log4j.appender.syslog.syslogHost</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">127.0.0.1:514</span>
+</span></span><span style="display:flex;"><span><span style="color:#50fa7b">log4j.appender.syslog.facility</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">LOCAL6</span>
+</span></span><span style="display:flex;"><span><span style="color:#50fa7b">log4j.appender.syslog.facilityPrinting</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">false</span>
+</span></span><span style="display:flex;"><span><span style="color:#50fa7b">log4j.appender.syslog.header</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">false</span>
+</span></span><span style="display:flex;"><span><span style="color:#50fa7b">log4j.appender.syslog.layout</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">org.apache.log4j.PatternLayout</span>
+</span></span><span style="display:flex;"><span><span style="color:#50fa7b">log4j.appender.syslog.layout.conversionPattern</span><span style="color:#ff79c6">=</span> <span style="color:#f1fa8c">%d{MMM dd HH:mm:ss} your_hostname kafka:{&#34;date&#34;:&#34;%d&#34;,&#34;level&#34;:&#34;%p&#34;,&#34;category&#34;:&#34;%c&#34;,&#34;message&#34;:&#34;%m&#34;}%n</span></span></span></code></pre></div></p>
 <p>What do we have here?</p>
-
 <p><strong><code>threshold</code></strong> is here to filter what kind of log level you will be sending to syslog.</p>
-
 <p><strong><code>facility</code></strong> is to define the facility of your syslog messages. Here we sent everything on <code>LOCAL6</code> but you can change it to your needs.</p>
-
 <p><strong><code>facilityPrinting</code></strong> and <strong><code>header</code></strong> are set to false because we will be formatting our message correctly with <code>PatternLayout</code>.
 <code>facilityPrinting</code> add the facility you defined in the message sent to syslog.
 <code>header</code> add syslog header: date and time, hostname, topic but with some mistakes (at least in this version).</p>
-
 <p><strong><code>layout.conversionPattern</code></strong> is customisable to your needs but you must to keep this portion at the beginning
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text"> %d{MMM dd HH:mm:ss} your_hostname kafka:</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span> %d{MMM dd HH:mm:ss} your_hostname kafka:</span></span></code></pre></div>
 and <code>%n</code> at the end (to put a new line character).
 The whitespace before <code>%d</code> is important here.
 <code>your_hostname</code> must match the hostname of your server.</p>
-
 <p>I&rsquo;m also using a json like logging but you can format it the way you want. Options are available <a href="https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/PatternLayout.html">here</a>.</p>
-
 <h3 id="send-logs-to-your-syslog-appender">Send logs to your syslog appender</h3>
-
 <p>Last bit of configuration is to tell log4j to forward logs to your appender.</p>
-
 <p>You can for example send everything to syslog (no stdout) like this:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cfg" data-lang="cfg"><span style="color:#a6e22e">log4j.rootLogger</span><span style="color:#f92672">=</span><span style="color:#e6db74">INFO, syslog</span></code></pre></div></p>
-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cfg" data-lang="cfg"><span style="display:flex;"><span><span style="color:#50fa7b">log4j.rootLogger</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">INFO, syslog</span></span></span></code></pre></div></p>
 <p>Or just add syslog to the current configuration:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cfg" data-lang="cfg"><span style="color:#a6e22e">log4j.rootLogger</span><span style="color:#f92672">=</span><span style="color:#e6db74">INFO, stdout, syslog</span></code></pre></div></p>
-
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cfg" data-lang="cfg"><span style="display:flex;"><span><span style="color:#50fa7b">log4j.rootLogger</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">INFO, stdout, syslog</span></span></span></code></pre></div></p>
 <h3 id="restart-kafka">Restart Kafka</h3>
-
 <p>Restart kafka to apply your newly log4j configuration!</p>
-
 <p>Here is a log sample with my configuration when arriving on our central rsyslog:
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-logs" data-lang="logs">2019-05-26T22:17:04+00:00 kafka-server kafka.info {&#34;date&#34;:&#34;2019-05-26 22:17:04,763&#34;,&#34;level&#34;:&#34;INFO&#34;,&#34;category&#34;:&#34;kafka.coordinator.group.GroupMetadataManager&#34;,&#34;message&#34;:&#34;[GroupMetadataManager brokerId=1]
+<pre tabindex="0"><code class="language-logs" data-lang="logs">2019-05-26T22:17:04+00:00 kafka-server kafka.info {&#34;date&#34;:&#34;2019-05-26 22:17:04,763&#34;,&#34;level&#34;:&#34;INFO&#34;,&#34;category&#34;:&#34;kafka.coordinator.group.GroupMetadataManager&#34;,&#34;message&#34;:&#34;[GroupMetadataManager brokerId=1]
  Scheduling loading of offsets and group metadata from __consumer_offsets-7&#34;}
 2019-05-26T22:17:04+00:00 kafka-server kafka.info {&#34;date&#34;:&#34;2019-05-26 22:17:04,763&#34;,&#34;level&#34;:&#34;INFO&#34;,&#34;category&#34;:&#34;kafka.coordinator.group.GroupMetadataManager&#34;,&#34;message&#34;:&#34;[GroupMetadataManager brokerId=1]
  Scheduling loading of offsets and group metadata from __consumer_offsets-13&#34;}
 2019-05-26T22:17:04+00:00 kafka-server kafka.info {&#34;date&#34;:&#34;2019-05-26 22:17:04,763&#34;,&#34;level&#34;:&#34;INFO&#34;,&#34;category&#34;:&#34;kafka.coordinator.group.GroupMetadataManager&#34;,&#34;message&#34;:&#34;[GroupMetadataManager brokerId=1]
- Scheduling loading of offsets and group metadata from __consumer_offsets-19&#34;}</code></pre></div></p>
-
+ Scheduling loading of offsets and group metadata from __consumer_offsets-19&#34;}</code></pre></p>
 <h1 id="conclusion">Conclusion</h1>
-
 <p>Maybe Kafka will migrate to log4j2 one day but in the mean time this configuration is working as I want.</p>
-
 <p>I regret that there isn&rsquo;t a lot of documentation about how to output logs the way we want either on Kafka website or log4j (1.2). I had hard time figuring out why I wasn&rsquo;t able to forward logs, turns out it was because the <code>SyslogAppender</code> doesn&rsquo;t have the correct format (tcpdump helped here).</p>
-
 <p>I hope that this article was helpful to you, do not hesitate to share it!</p>
 
     </div>
-    <div class="post-footer">
-      
-    </div>
-  </article>
+    <footer class="content__footer"></footer>
 
-    </main>
-  </body>
+            </section>
+
+            <section class="page__aside">
+                <div class="aside__about">
+<div class="aside__about">
+    <img class="about__logo" src="http://localhost:1313/avatar.png" alt="Logo">
+<h1 class="about__title">Antoine Leroyer</h1>
+<p class="about__description">Hi. I&rsquo;m Antoine, an Infrastructure Engineer and SRE. Currently working at Deezer.</p>
+</div>
+
+
+<ul class="aside__social-links">
+    
+    <li>
+        <a href="https://github.com/aleroyer" rel="me" aria-label="GitHub" title="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://www.linkedin.com/in/antoineleroyer/" rel="me" aria-label="LinkedIn" title="LinkedIn"><i class="fa-brands fa-linkedin" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://matrix.to/#/@aleroyer:matrix.org" rel="me" aria-label="Matrix" title="Matrix"><i class="fa-solid fa-comment" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+</ul>
+</div>
+                <hr>
+                <div class="aside__content">
+    
+    
+        <p>
+            
+            2019-05-26
+        </p>
+    
+
+                </div>
+            </section>
+
+            <footer class="page__footer"><p>
+    
+    
+    
+    
+    
+    
+      
+    
+      
+    
+    
+    
+      
+      
+          
+            
+            
+                <br/><span class="active">$ echo $LANG<br/><b></b></span><br/>
+
+            
+          
+      
+    
+</p>
+<br /><br />
+<p class="copyright"></p>
+<p class="advertisement">Powered by <a href="https://gohugo.io/">hugo</a> and <a href="https://github.com/joeroe/risotto">risotto</a>.</p>
+</footer>
+
+        </div>
+    </body>
+
 </html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><title>Using HAProxy to act as an HTTP server &ndash; leroyer.io</title>
+<meta name="description" content="Hi. I&#39;m Antoine, an Infrastructure Engineer and SRE. Currently working at Deezer.">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8"/>
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.9.1/css/academicons.min.css" integrity="sha512-b1ASx0WHgVFL5ZQhTgiPWX+68KjS38Jk87jg7pe+qC7q9YkEtFq0z7xCglv7qGIs/68d3mAp+StfC8WKC5SSAg==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="http://localhost:1313/css/palettes/github.css">
+<link rel="stylesheet" href="http://localhost:1313/css/risotto.css">
+<link rel="stylesheet" href="http://localhost:1313/css/custom.css">
+</head>
+
+    <body>
+        <div class="page">
+
+            <header class="page__header"><h1 class="page__logo"><a href="http://localhost:1313/" class="page__logo-inner">leroyer.io</a></h1>
+<nav class="page__nav main-nav">
+    <ul>
+    
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="http://localhost:1313/about/" title="">About</a></li>
+    
+    <li class="main-nav__item"><a class="nav-main-item active" href="http://localhost:1313/posts/" title="Posts">Posts</a></li>
+    
+    </ul>
+</nav>
+
+</header>
+
+            <section class="page__body">
+    <header class="content__header">
+        <h1>Using HAProxy to act as an HTTP server</h1>
+    </header>
+    <div class="content__body">
+        <p>During my work, I stumbled upon some little problems that often require to deploy several component for just a simple task.</p>
+<p>For example, we had to validate with our CDN that our endpoint was own by us. Fair enough, let&rsquo;s set a TXT record on our DNS servers! Well, it doesn&rsquo;t always work that way. Those providers required an HTTP validation with a specific URL and content.</p>
+<h1 id="context">Context</h1>
+<p>We have two providers requesting an HTTP endpoint with a specific url/content.</p>
+<p>The first one, we will call this one Alice:</p>
+<ul>
+<li><code>https://origin-domain/alice/index.html</code></li>
+<li>String content, <code>text/html</code> with this value <code>ALICE &lt;origin-domain&gt;</code></li>
+</ul>
+<p>The second one, we will call this one Bob:</p>
+<ul>
+<li><code>https://origin-domain/bob/bob-test-object.html</code></li>
+<li>String content, <code>text/html</code> with a specific file provided by them</li>
+</ul>
+<h1 id="defining-a-solution">Defining a solution</h1>
+<p>Bob is the easiest one, it only requires a file to be served, however HAProxy is a proxy by definition, it doesn&rsquo;t know how to serve a file right? &hellip;right?</p>
+<p>Well, we will see that later.</p>
+<p>Alice is kind of cumbersome as we need to return the <code>origin-domain</code> for each domain we want to validate.</p>
+<p>A simple solution is to write a micro-service, maybe just nginx with some configuration but we will then setup a new application, deploy it in an environment (Kubernetes for example) and this is a lot of work for just a simple thing!</p>
+<h1 id="just-hack-it">Just hack it!</h1>
+<p>In my company, there is a value that says <code>Just hack it!</code>. When you encounter a new problem, the solution sometimes reside in reusing the stuff you got instead of just creating new solutions. In addition to that, we love the KISS (Keep It Simple Stupid) approach.</p>
+<p>Let&rsquo;s see how we can manage that with HAProxy</p>
+<h2 id="frontend-configuration">Frontend configuration</h2>
+<p>Inside the frontend block of you HAProxy configuration, we need to declare ACL to match specific URI sent by our providers.</p>
+<p>Below an example of ACLs matching our case:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>acl is_alice_test_object path /alice/index.html
+</span></span><span style="display:flex;"><span>acl is_bob_test_object path /bob/bob-test-object.html</span></span></code></pre></div>
+<p>We will also need to declare some backend.</p>
+<h2 id="backend-configuration">Backend configuration</h2>
+<p>That&rsquo;s where HAProxy will surprise you. The software is actually capable of returning HTTP content without the need of a server. You can just declare a backend that will answer to a specific requests (or multiple).</p>
+<p>Configuration can become a bit complex if you are trying to do something like a mini-application but it is handy to solve simple problems like ours.</p>
+<h3 id="alices-case">Alice&rsquo;s case</h3>
+<p>For example, to answer Alice request you can set this configuration:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>backend be_alice_validation_service
+</span></span><span style="display:flex;"><span>  description Self service backend to perform Alice validation
+</span></span><span style="display:flex;"><span>  mode http
+</span></span><span style="display:flex;"><span>  http-request <span style="color:#ff79c6">return</span> status <span style="color:#bd93f9">200</span> content-type <span style="color:#f1fa8c">&#34;text/html; charset=utf-8&#34;</span> lf-string <span style="color:#f1fa8c">&#34;ALICE %[req.hdr(host)]\n&#34;</span></span></span></code></pre></div></p>
+<p>It will return <code>ALICE &lt;domain&gt;</code> for any request you send to this backend. Easy!</p>
+<p><code>http-request return</code> [1] is an option to manipulate the request object sent by HAProxy, since we have no server declared in this backend and no ACL it will return a <code>200</code> status for every request.</p>
+<p><code>lf-string</code> let&rsquo;s you define a string while allowing the use of Log Format variables. Thus we can set dynamically the request host.</p>
+<h3 id="bobs-case">Bob&rsquo;s case</h3>
+<p>Bob&rsquo;s is as easy as Alice&rsquo;s. First you will need to have the file you want to serve store somewhere. For the example I will copy it in <code>/etc/haproxy</code> where my configuration resides.</p>
+<p>Now for the configuration part, it is almost the same as Alice&rsquo;s:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>backend be_bob_validation_service
+</span></span><span style="display:flex;"><span>  description Self service backend to perform Bob validation
+</span></span><span style="display:flex;"><span>  mode http
+</span></span><span style="display:flex;"><span>  http-request <span style="color:#ff79c6">return</span> status <span style="color:#bd93f9">200</span> content-type <span style="color:#f1fa8c">&#34;text/html; charset=utf-8&#34;</span> lf-file /etc/haproxy/files/bob-test-object.html</span></span></code></pre></div></p>
+<p>See, same as Alice&rsquo;s! But this time we used <code>lf-file</code> instead of <code>lf-string</code>.</p>
+<p>It acts the same (let&rsquo;s you use the Log Format variables) but this time you will load the content from a file. It can be useful if you have a complex html file with some dynamic part.</p>
+<h2 id="combining-all-together">Combining all together</h2>
+<p>Now you just need to use the ACL declared earlier in your frontend.</p>
+<p>A simple version would be:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>frontend http_frontend
+</span></span><span style="display:flex;"><span>  <span style="color:#8be9fd;font-style:italic">bind</span> *:443 ssl cert /etc/haproxy/ssl/cert.pem
+</span></span><span style="display:flex;"><span>  mode http
+</span></span><span style="display:flex;"><span>  acl is_alice_test_object path /alice/index.html
+</span></span><span style="display:flex;"><span>  acl is_bob_test_object path /bob/bob-test-object.html
+</span></span><span style="display:flex;"><span>  use_backend be_alice_validation_service <span style="color:#ff79c6">if</span> is_alice_test_object
+</span></span><span style="display:flex;"><span>  use_backend be_bob_validation_service <span style="color:#ff79c6">if</span> is_bob_test_object</span></span></code></pre></div></p>
+<p>You can try this yourself!</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>With this simple configuration we avoid the need of deploying nginx or any other application that can perform such simple substitutions. We also learn a bit of HAProxy hidden capabilities.</p>
+<p>Thanks to HAProxyTech&rsquo;s Github [2], I was able to discover that HAProxy can do HTTP requests by its own. Check the repo in the source section to discover more use cases.</p>
+<p>Reading the documentation of HAProxy is also very helpful, you can almost do everything with HAProxy! Haha!</p>
+<hr>
+<h1 id="sources">Sources</h1>
+<ol>
+<li><a href="http://docs.haproxy.org/2.6/configuration.html#4.2-http-request%20return">http://docs.haproxy.org/2.6/configuration.html#4.2-http-request%20return</a></li>
+<li><a href="https://github.com/haproxytech/ultimate-configs/blob/2.2/haproxy.cfg">https://github.com/haproxytech/ultimate-configs/blob/2.2/haproxy.cfg</a></li>
+</ol>
+
+    </div>
+    <footer class="content__footer"></footer>
+
+            </section>
+
+            <section class="page__aside">
+                <div class="aside__about">
+<div class="aside__about">
+    <img class="about__logo" src="http://localhost:1313/avatar.png" alt="Logo">
+<h1 class="about__title">Antoine Leroyer</h1>
+<p class="about__description">Hi. I&rsquo;m Antoine, an Infrastructure Engineer and SRE. Currently working at Deezer.</p>
+</div>
+
+
+<ul class="aside__social-links">
+    
+    <li>
+        <a href="https://github.com/aleroyer" rel="me" aria-label="GitHub" title="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://www.linkedin.com/in/antoineleroyer/" rel="me" aria-label="LinkedIn" title="LinkedIn"><i class="fa-brands fa-linkedin" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://matrix.to/#/@aleroyer:matrix.org" rel="me" aria-label="Matrix" title="Matrix"><i class="fa-solid fa-comment" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+</ul>
+</div>
+                <hr>
+                <div class="aside__content">
+    
+    
+        <p>
+            
+            2022-11-13
+        </p>
+    
+
+                </div>
+            </section>
+
+            <footer class="page__footer"><p>
+    
+    
+    
+    
+    
+    
+      
+    
+      
+    
+    
+    
+      
+      
+          
+            
+            
+                <br/><span class="active">$ echo $LANG<br/><b></b></span><br/>
+
+            
+          
+      
+    
+</p>
+<br /><br />
+<p class="copyright"></p>
+<p class="advertisement">Powered by <a href="https://gohugo.io/">hugo</a> and <a href="https://github.com/joeroe/risotto">risotto</a>.</p>
+</footer>
+
+        </div>
+    </body>
+
+</html>
