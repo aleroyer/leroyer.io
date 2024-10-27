@@ -6,8 +6,15 @@
     <description>Recent content in Posts on leroyer.io</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 13 Nov 2022 17:54:00 +0200</lastBuildDate>
+    <lastBuildDate>Sun, 27 Oct 2024 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Improving network latency of DaemonSet in Kubernetes with Internal Traffic Policy</title>
+      <link>http://localhost:1313/posts/2024-10-27-improving-network-latency-of-daemonset/</link>
+      <pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/2024-10-27-improving-network-latency-of-daemonset/</guid>
+      <description>&lt;p&gt;At our company, we primarily operate on bare-metal infrastructure, which provides us with very low network&#xA;latency within a zone or datacenter. When we began migrating services to Kubernetes (also running on bare-metal),&#xA;we needed to ensure that certain daemons running on each bare-metal server were also present on Kubernetes nodes&#xA;in a Kubernetes-native manner. To achieve this, we utilized DaemonSets, which are designed for this purpose.&lt;/p&gt;&#xA;&lt;p&gt;In this article, we will focus on a specific service we use, &lt;a href=&#34;https://github.com/facebook/mcrouter&#34;&gt;mcrouter&lt;/a&gt;,&#xA;a proxy that enhances &lt;a href=&#34;https://memcached.org/&#34;&gt;memcached&lt;/a&gt;&amp;rsquo;s reliability by facilitating read/write operations to&#xA;multiple memcached servers.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>Using HAProxy to act as an HTTP server</title>
       <link>http://localhost:1313/posts/2022-11-13-using-haproxy-as-an-http-server/</link>

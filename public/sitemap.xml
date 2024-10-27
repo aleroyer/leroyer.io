@@ -3,10 +3,13 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
-    <lastmod>2022-11-13T17:54:00+02:00</lastmod>
+    <lastmod>2024-10-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/posts/2024-10-27-improving-network-latency-of-daemonset/</loc>
+    <lastmod>2024-10-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/posts/</loc>
-    <lastmod>2022-11-13T17:54:00+02:00</lastmod>
+    <lastmod>2024-10-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/posts/2022-11-13-using-haproxy-as-an-http-server/</loc>
     <lastmod>2022-11-13T17:54:00+02:00</lastmod>

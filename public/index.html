@@ -16,7 +16,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.9.1/css/academicons.min.css" integrity="sha512-b1ASx0WHgVFL5ZQhTgiPWX+68KjS38Jk87jg7pe+qC7q9YkEtFq0z7xCglv7qGIs/68d3mAp+StfC8WKC5SSAg==" crossorigin="anonymous" />
 
 
-<link rel="stylesheet" href="http://localhost:1313/css/palettes/github.css">
+<link rel="stylesheet" href="http://localhost:1313/css/palettes/catpuccin-latte.css">
+<link rel="stylesheet" href="http://localhost:1313/css/palettes/catpuccin-mocha.css" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="http://localhost:1313/css/risotto.css">
 <link rel="stylesheet" href="http://localhost:1313/css/custom.css">
 </head>
@@ -43,6 +44,26 @@
         
     </header>
 
+    
+    <article class="post">
+        <header class="post__header">
+            <h1><a href="http://localhost:1313/posts/2024-10-27-improving-network-latency-of-daemonset/">Improving network latency of DaemonSet in Kubernetes with Internal Traffic Policy</a></h1>
+            <p class="post__meta">
+                <span class="date">27 October 2024</span>
+            </p>
+        </header>
+
+        <section class="post__summary">
+            <p>At our company, we primarily operate on bare-metal infrastructure, which provides us with very low network
+latency within a zone or datacenter. When we began migrating services to Kubernetes (also running on bare-metal),
+we needed to ensure that certain daemons running on each bare-metal server were also present on Kubernetes nodes
+in a Kubernetes-native manner. To achieve this, we utilized DaemonSets, which are designed for this purpose.</p>
+<p>In this article, we will focus on a specific service we use, <a href="https://github.com/facebook/mcrouter">mcrouter</a>,
+a proxy that enhances <a href="https://memcached.org/">memcached</a>&rsquo;s reliability by facilitating read/write operations to
+multiple memcached servers.</p> [...]
+        </section>
+    </article>
+    <hr/>
     
     <article class="post">
         <header class="post__header">
@@ -75,24 +96,6 @@ The default configuration output a lot of logs to stdout. In my actual configura
 This can come handy when the application doesn&rsquo;t know how to log with syslog.
 However, I had an issue with Kafka and journald where logs were also written to the filesystem until the partition is full.
 So output log directly to rsyslog was necessary.</p> [...]
-        </section>
-    </article>
-    <hr/>
-    
-    <article class="post">
-        <header class="post__header">
-            <h1><a href="http://localhost:1313/posts/2018-12-23-starting-a-blog/">Starting a Blog</a></h1>
-            <p class="post__meta">
-                <span class="date">23 December 2018</span>
-            </p>
-        </header>
-
-        <section class="post__summary">
-            <p>So it begins.</p>
-<p>I&rsquo;m starting a blog and I will try to write some posts related to tech stuff.</p>
-<p>Most of my posts will be about opensource stuff related to infrastructure and linux systems.</p>
-<p>I hope that you will enjoy reading my posts!</p>
-<p>In the mean time you can check links in the sidebar and come back here in a few months :)</p> [...]
         </section>
     </article>
     <hr/>

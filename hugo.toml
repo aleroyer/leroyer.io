@@ -26,7 +26,8 @@ author = "Antoine Leroyer"
 #   primaryColor = "#fff"
 
 [params.theme]
-palette = "github"
+palette = "catpuccin-latte"
+paletteDark = "catpuccin-mocha"
 
 # Sidebar: about/bio
 [params.about]

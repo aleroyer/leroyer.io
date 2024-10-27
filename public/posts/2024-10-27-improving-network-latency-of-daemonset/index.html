@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><title>Improving network latency of DaemonSet in Kubernetes with Internal Traffic Policy &ndash; leroyer.io</title>
+<meta name="description" content="Hi. I&#39;m Antoine, an Infrastructure Engineer and SRE. Currently working at Deezer.">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8"/>
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.9.1/css/academicons.min.css" integrity="sha512-b1ASx0WHgVFL5ZQhTgiPWX+68KjS38Jk87jg7pe+qC7q9YkEtFq0z7xCglv7qGIs/68d3mAp+StfC8WKC5SSAg==" crossorigin="anonymous" />
+
+
+<link rel="stylesheet" href="http://localhost:1313/css/palettes/catpuccin-latte.css">
+<link rel="stylesheet" href="http://localhost:1313/css/palettes/catpuccin-mocha.css" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="http://localhost:1313/css/risotto.css">
+<link rel="stylesheet" href="http://localhost:1313/css/custom.css">
+</head>
+
+    <body>
+        <div class="page">
+
+            <header class="page__header"><h1 class="page__logo"><a href="http://localhost:1313/" class="page__logo-inner">leroyer.io</a></h1>
+<nav class="page__nav main-nav">
+    <ul>
+    
+    
+    <li class="main-nav__item"><a class="nav-main-item" href="http://localhost:1313/about/" title="">About</a></li>
+    
+    <li class="main-nav__item"><a class="nav-main-item active" href="http://localhost:1313/posts/" title="Posts">Posts</a></li>
+    
+    </ul>
+</nav>
+
+</header>
+
+            <section class="page__body">
+    <header class="content__header">
+        <h1>Improving network latency of DaemonSet in Kubernetes with Internal Traffic Policy</h1>
+    </header>
+    <div class="content__body">
+        <p>At our company, we primarily operate on bare-metal infrastructure, which provides us with very low network
+latency within a zone or datacenter. When we began migrating services to Kubernetes (also running on bare-metal),
+we needed to ensure that certain daemons running on each bare-metal server were also present on Kubernetes nodes
+in a Kubernetes-native manner. To achieve this, we utilized DaemonSets, which are designed for this purpose.</p>
+<p>In this article, we will focus on a specific service we use, <a href="https://github.com/facebook/mcrouter">mcrouter</a>,
+a proxy that enhances <a href="https://memcached.org/">memcached</a>&rsquo;s reliability by facilitating read/write operations to
+multiple memcached servers.</p>
+<blockquote>
+<p>Note: Modern versions of memcached include a similar feature with a
+<a href="https://docs.memcached.org/features/proxy/">built-in proxy</a> that offers better support. We plan to
+replace mcrouter with this built-in proxy in the future.</p>
+</blockquote>
+<h2 id="a-brief-history-from-127001-to-unix-sockets">A Brief History: From <code>127.0.0.1</code> to Unix Sockets</h2>
+<p>On our non-Kubernetes servers, mcrouter was configured to listen on <code>127.0.0.1:11211</code>. This setup was
+advantageous for several reasons:</p>
+<ul>
+<li>Mcrouter was not exposed to internal or external networks</li>
+<li>The configuration for applications using memcached remained consistent across all environments</li>
+<li>There was no latency between the application and mcrouter, as the communication occurred over the
+loopback interface, staying within the host.</li>
+</ul>
+<p>However, in 2019, with Kubernetes 1.16, there was no <strong>Internal Traffic Policy</strong> feature available. This
+necessitated a change in how mcrouter was exposed to applications while maintaining low latencies. We decided
+to switch to a Unix socket with a <a href="https://kubernetes.io/docs/concepts/storage/volumes/#hostpath"><code>hostPath</code></a> mount.</p>
+<blockquote>
+<p>Why is low latency important? Memcached access needs to be completed within a few milliseconds; otherwise,
+caching becomes ineffective in a high-traffic environment. Generally, our applications require only 1 or 2
+milliseconds to receive a response from memcached.</p>
+</blockquote>
+<p>Although this approach was not ideal, it was the only way to ensure that a workload on <code>node A</code> would use the
+mcrouter instance on <code>node A</code>. Due to the way Kubernetes Services functioned at the time, it was impossible to
+guarantee that an application on <code>node A</code> would connect to <code>node A</code>&rsquo;s mcrouter instead of <code>node B</code>&rsquo;s.</p>
+<p>We could have employed alternative methods, such as retrieving the DaemonSet&rsquo;s Pod IP and transmitting this
+information back to the applications. While this might have been a better solution, we opted to stick with
+the Unix socket approach.</p>
+<p>While Unix sockets offer good performances, they come with several drawbacks:</p>
+<ul>
+<li>Applications must be reconfigured to use a Unix socket instead of TCP</li>
+<li>Each deployment must mount the same host path as the mcrouter daemonset</li>
+<li>Rolling out the daemonset results in downtime or errors for applications using the socket, as it is challenging to have two sockets existing in parallel</li>
+</ul>
+<h2 id="kubernetes-126-internal-traffic-policy-as-stable">Kubernetes 1.26, Internal Traffic Policy as stable</h2>
+<p>In Kubernetes 1.26, Internal and External traffic policies have reached stable status.</p>
+<p>According to the <a href="https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-policies">official documentation</a> on internal traffic policy:</p>
+<blockquote>
+<p>You can set the <code>.spec.internalTrafficPolicy</code> field to control how traffic from internal sources is routed.
+Valid values are <code>Cluster</code> and <code>Local</code>. Set the field to <code>Cluster</code> to route internal traffic to all ready
+endpoints and <code>Local</code> to only route to ready node-local endpoints. If the traffic policy is Local and there
+are no node-local endpoints, traffic is dropped by kube-proxy.</p>
+</blockquote>
+<p>This enhancement allows us to configure Kubernetes to route traffic from <code>node A</code> exclusively to
+<code>node A</code>&rsquo;s DaemonSet pod, thereby reducing network hops and latency.</p>
+<p>Here is an example of how this configuration would look in a service endpoint definition in YAML:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">mcrouter</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">core</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">mcrouter</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">11211</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">11211</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">internalTrafficPolicy</span>: <span style="color:#ae81ff">Local</span>
+</span></span></code></pre></div><p>With this definition, apps can reach my mcrouter service with this url <code>mcrouter.core:11211</code>.</p>
+<p>However, there are two important considerations before implementing this:</p>
+<ul>
+<li><strong>CNI Support</strong>: Your Cluster Network Interface (CNI) must support this specification if you have replaced
+<code>kube-proxy</code>. This requirement is not explicitly highlighted in the documentation.</li>
+<li><strong>Pod Readiness</strong>: If the Pod on a node is in a <code>NotReady</code> state, traffic will be dropped for all requests
+from this node.</li>
+</ul>
+<h3 id="ensuring-cni-support-if-kube-proxy-is-replaced">Ensuring CNI Support if <code>kube-proxy</code> is replaced</h3>
+<p>Refer to your CNI&rsquo;s documentation to verify support for this feature. In our clusters, we use <a href="https://cilium.io/">Cilium</a> <a href="https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#kubernetes-without-kube-proxy">without kube-proxy</a>.
+Fortunately, <a href="https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#internal-traffic-policy">Cilium supports this directive</a>:</p>
+<blockquote>
+<p>Similar to <code>externalTrafficPolicy</code> described above, Cilium’s eBPF kube-proxy replacement supports <code>internalTrafficPolicy</code>, which translates the above semantics to in-cluster traffic.</p>
+</blockquote>
+<h3 id="handling-pod-notready-state">Handling Pod <code>NotReady</code> State</h3>
+<p>A similar issue arises as with our current DaemonSet implementation using Unix sockets. If we restart the pod,
+traffic will be dropped, leading to errors in applications.</p>
+<p>How can we overcome this?</p>
+<h2 id="changing-the-default-updatestrategy-parameters-of-your-daemonset">Changing the default updateStrategy parameters of your DaemonSet</h2>
+<p>In Kubernetes, a DaemonSet use the <code>RollingUpdate</code> update strategy by default <a href="https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/#daemonset-update-strategy">but with a twist</a>:</p>
+<blockquote>
+<p>With <code>RollingUpdate</code> update strategy, after you update a DaemonSet template, old DaemonSet pods will be killed,
+and new DaemonSet pods will be created automatically, in a controlled fashion. At most one pod of the DaemonSet
+will be running on each node during the whole update process.</p>
+</blockquote>
+<p>This is to prevent two DaemonSet running in parallel on a same host.</p>
+<p>In our case, mcrouter serves as a proxy to abstract how clients connect to our cache cluster. Having two daemons running in parallel is not an issue if they are not using Unix sockets. With TCP, this is not a problem at all, as each pod will have a different IP address.</p>
+<p>By default, the <code>updateStrategy</code> set <code>.spec.updateStrategy.rollingUpdate.maxUnavailable</code> to <code>1</code>, and <code>.spec.updateStrategy.rollingUpdate.maxSurge</code> to <code>0</code>. We simply need to inverse the logic here to allow two DaemonSet running on the same host during a rolling update:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">updateStrategy</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">RollingUpdate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">rollingUpdate</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">maxUnavailable</span>: <span style="color:#ae81ff">0</span>  <span style="color:#75715e"># this prevent killing the old pod</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">maxSurge</span>: <span style="color:#ae81ff">1</span>        <span style="color:#75715e"># this create the new pod before killing the old one</span>
+</span></span></code></pre></div><h2 id="conclusion">Conclusion</h2>
+<p>With these changes, we achieve the following:</p>
+<ul>
+<li>Establish a consistent service endpoint for all our applications in Kubernetes (<code>mcrouter.core:11211</code>)</li>
+<li>Ensure that each application uses its local DaemonSet pod, avoiding unnecessary cluster network traffic</li>
+<li>Enhance the availability of our DaemonSet during restarts</li>
+</ul>
+<h2 id="but-wait-theres-more">But wait, there&rsquo;s more</h2>
+<p>We have seen how to change service traffic routing between <code>Cluster</code> and <code>Local</code>, which is beneficial for DaemonSets. However, this approach is not suitable for Deployments, as it would require using Affinity to ensure applications are scheduled on the same host as their dependencies, which is not truly Kubernetes-native.</p>
+<p>Fortunately, there is a promising new feature, currently in beta in Kubernetes 1.31, called <a href="https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-distribution">Traffic Distribution</a>. This feature allows you to prefer using a local pod if available, instead of always sending requests across the cluster network. This is particularly useful for improving communication between microservices that require low latencies.</p>
+
+    </div>
+    <footer class="content__footer"></footer>
+
+            </section>
+
+            <section class="page__aside">
+                <div class="aside__about">
+<div class="aside__about">
+    <img class="about__logo" src="http://localhost:1313/avatar.png" alt="Logo">
+<h1 class="about__title">Antoine Leroyer</h1>
+<p class="about__description">Hi. I&rsquo;m Antoine, an Infrastructure Engineer and SRE. Currently working at Deezer.</p>
+</div>
+
+
+<ul class="aside__social-links">
+    
+    <li>
+        <a href="https://github.com/aleroyer" rel="me" aria-label="GitHub" title="GitHub"><i class="fa-brands fa-github" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://www.linkedin.com/in/antoineleroyer/" rel="me" aria-label="LinkedIn" title="LinkedIn"><i class="fa-brands fa-linkedin" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+    <li>
+        <a href="https://matrix.to/#/@aleroyer:matrix.org" rel="me" aria-label="Matrix" title="Matrix"><i class="fa-solid fa-comment" aria-hidden="true"></i></a>&nbsp;
+    </li>
+    
+</ul>
+</div>
+                <hr>
+                <div class="aside__content">
+    
+    
+        <p>
+            
+            2024-10-27
+        </p>
+    
+
+                </div>
+            </section>
+
+            <footer class="page__footer"><p>
+    
+    
+    
+    
+    
+    
+      
+    
+      
+    
+    
+    
+      
+      
+          
+            
+            
+                <br/><span class="active">$ echo $LANG<br/><b></b></span><br/>
+
+            
+          
+      
+    
+</p>
+<br /><br />
+<p class="copyright"></p>
+<p class="advertisement">Powered by <a href="https://gohugo.io/">hugo</a> and <a href="https://github.com/joeroe/risotto">risotto</a>.</p>
+</footer>
+
+        </div>
+    </body>
+
+</html>
